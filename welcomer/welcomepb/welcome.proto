@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package welcomer;
+option go_package = "/welcomepb";
+
+
+service WelcomeService {
+}
