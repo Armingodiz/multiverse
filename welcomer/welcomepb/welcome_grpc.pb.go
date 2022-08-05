@@ -7,7 +7,10 @@
 package welcomepb
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,6 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WelcomeServiceClient interface {
+	// unary example
+	Welcome(ctx context.Context, in *WelcomeRequest, opts ...grpc.CallOption) (*WelcomeResponse, error)
 }
 
 type welcomeServiceClient struct {
@@ -29,10 +34,21 @@ func NewWelcomeServiceClient(cc grpc.ClientConnInterface) WelcomeServiceClient {
 	return &welcomeServiceClient{cc}
 }
 
+func (c *welcomeServiceClient) Welcome(ctx context.Context, in *WelcomeRequest, opts ...grpc.CallOption) (*WelcomeResponse, error) {
+	out := new(WelcomeResponse)
+	err := c.cc.Invoke(ctx, "/welcomer.WelcomeService/Welcome", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WelcomeServiceServer is the server API for WelcomeService service.
 // All implementations must embed UnimplementedWelcomeServiceServer
 // for forward compatibility
 type WelcomeServiceServer interface {
+	// unary example
+	Welcome(context.Context, *WelcomeRequest) (*WelcomeResponse, error)
 	mustEmbedUnimplementedWelcomeServiceServer()
 }
 
@@ -40,6 +56,9 @@ type WelcomeServiceServer interface {
 type UnimplementedWelcomeServiceServer struct {
 }
 
+func (UnimplementedWelcomeServiceServer) Welcome(context.Context, *WelcomeRequest) (*WelcomeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Welcome not implemented")
+}
 func (UnimplementedWelcomeServiceServer) mustEmbedUnimplementedWelcomeServiceServer() {}
 
 // UnsafeWelcomeServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -53,13 +72,36 @@ func RegisterWelcomeServiceServer(s grpc.ServiceRegistrar, srv WelcomeServiceSer
 	s.RegisterService(&WelcomeService_ServiceDesc, srv)
 }
 
+func _WelcomeService_Welcome_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WelcomeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WelcomeServiceServer).Welcome(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/welcomer.WelcomeService/Welcome",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WelcomeServiceServer).Welcome(ctx, req.(*WelcomeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WelcomeService_ServiceDesc is the grpc.ServiceDesc for WelcomeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var WelcomeService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "welcomer.WelcomeService",
 	HandlerType: (*WelcomeServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "welcomer/welcomepb/welcome.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Welcome",
+			Handler:    _WelcomeService_Welcome_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "welcomer/welcomepb/welcome.proto",
 }

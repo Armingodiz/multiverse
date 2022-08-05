@@ -1,1 +1,1 @@
-protoc --go-grpc_out=welcomer/. welcomer/welcomepb/welcome.proto
+protoc --go_out=welcomer/. --go-grpc_out=welcomer/. welcomer/welcomepb/welcome.proto
