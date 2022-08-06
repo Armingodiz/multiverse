@@ -13,7 +13,16 @@ message AddResponse {
   int32 sum = 1;
 }
 
+message PrimeNumberDecompositionRequest {
+  int64 number = 1;
+}
+
+message PrimeNumberDecompositionResponse {
+  int64 prime_factor = 1;
+}
+
 service Calculator {
   // unary example 
   rpc Add(AddRequest) returns (AddResponse) {}
+  rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {}
 }
