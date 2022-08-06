@@ -24,25 +24,33 @@ func main() {
 	defer conn.Close()
 	cli := welcomepb.NewWelcomeServiceClient(conn)
 	client := &Client{cli}
-	user := welcomepb.UserInfo{
-		Name:    "Armin",
-		Country: "Iran",
-		Age:     21,
-	}
-	response, err := client.Welcome(user)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("response:", response)
-	err = client.GetGreetings(user)
-	if err != nil {
-		if err == io.EOF {
-			fmt.Println("All creetings reveived")
-		} else {
-			panic(err)
-		}
-	}
-	err = client.ToManyPeopleComing()
+	// user := welcomepb.UserInfo{
+	// 	Name:    "Armin",
+	// 	Country: "Iran",
+	// 	Age:     21,
+	// }
+	// response, err := client.Welcome(user)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println("response:", response)
+	// err = client.GetGreetings(user)
+	// if err != nil {
+	// 	if err == io.EOF {
+	// 		fmt.Println("All creetings reveived")
+	// 	} else {
+	// 		panic(err)
+	// 	}
+	// }
+	// err = client.ToManyPeopleComing()
+	// if err != nil {
+	// 	if err == io.EOF {
+	// 		fmt.Println("All creetings reveived At the moment")
+	// 	} else {
+	// 		panic(err)
+	// 	}
+	// }
+	err = client.ManyPeopleComingAtTheMoment()
 	if err != nil {
 		if err == io.EOF {
 			fmt.Println("All creetings reveived")
@@ -107,4 +115,55 @@ func (client *Client) ToManyPeopleComing() error {
 	}
 	fmt.Println("response of to many people comeing is: ", response)
 	return nil
+}
+
+func (client *Client) ManyPeopleComingAtTheMoment() error {
+	stream, err := client.grpcClient.ManyPeopleComingAtTheMoment(context.Background())
+	if err != nil {
+		return err
+	}
+	done := make(chan bool)
+	errChan := make(chan error)
+	go func() {
+		for i := 0; i < 10; i++ {
+			user := welcomepb.UserInfo{
+				Name:    "Armin" + fmt.Sprintf("%d", i),
+				Country: "Iran",
+				Age:     20 + int32(i),
+			}
+			if err != nil {
+				errChan <- err
+				return
+			}
+			time.Sleep(time.Millisecond * 200)
+			stream.Send(&welcomepb.WelcomeRequest{
+				User:    &user,
+				Arrival: timestamppb.New(time.Now()),
+			})
+		}
+		stream.CloseSend()
+	}()
+
+	go func() {
+		for {
+			response, err := stream.Recv()
+			if err == io.EOF {
+				done <- true
+				return
+			}
+			if err != nil {
+				errChan <- err
+				return
+			}
+			fmt.Println("response:", response)
+		}
+	}()
+	for {
+		select {
+		case <-done:
+			return nil
+		case err := <-errChan:
+			return err
+		}
+	}
 }

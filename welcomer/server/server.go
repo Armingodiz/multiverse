@@ -46,6 +46,22 @@ func (s *server) ToManyPeopleComing(stream welcomepb.WelcomeService_ToManyPeople
 	}
 }
 
+func (s *server) ManyPeopleComingAtTheMoment(stream welcomepb.WelcomeService_ManyPeopleComingAtTheMomentServer) error {
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		err = stream.Send(&welcomepb.WelcomeResponse{Result: in.User.Name + "from " + in.User.Country + " you came at " + in.GetArrival().String()})
+		if err != nil {
+			return err
+		}
+	}
+}
+
 func main() {
 	listen, err := net.Listen("tcp", ":8080")
 	if err != nil {

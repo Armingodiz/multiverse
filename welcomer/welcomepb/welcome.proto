@@ -28,4 +28,6 @@ service WelcomeService {
     rpc GetGreetings(WelcomeRequest) returns (stream WelcomeResponse) {};
     // client streaming example
     rpc ToManyPeopleComing(stream WelcomeRequest) returns (WelcomeResponse) {};
+    // bidirectional streaming example
+    rpc ManyPeopleComingAtTheMoment(stream WelcomeRequest) returns (stream WelcomeResponse) {};
 }

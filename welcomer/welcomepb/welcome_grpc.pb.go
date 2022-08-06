@@ -28,6 +28,8 @@ type WelcomeServiceClient interface {
 	GetGreetings(ctx context.Context, in *WelcomeRequest, opts ...grpc.CallOption) (WelcomeService_GetGreetingsClient, error)
 	// client streaming example
 	ToManyPeopleComing(ctx context.Context, opts ...grpc.CallOption) (WelcomeService_ToManyPeopleComingClient, error)
+	// bidirectional streaming example
+	ManyPeopleComingAtTheMoment(ctx context.Context, opts ...grpc.CallOption) (WelcomeService_ManyPeopleComingAtTheMomentClient, error)
 }
 
 type welcomeServiceClient struct {
@@ -113,6 +115,37 @@ func (x *welcomeServiceToManyPeopleComingClient) CloseAndRecv() (*WelcomeRespons
 	return m, nil
 }
 
+func (c *welcomeServiceClient) ManyPeopleComingAtTheMoment(ctx context.Context, opts ...grpc.CallOption) (WelcomeService_ManyPeopleComingAtTheMomentClient, error) {
+	stream, err := c.cc.NewStream(ctx, &WelcomeService_ServiceDesc.Streams[2], "/welcomer.WelcomeService/ManyPeopleComingAtTheMoment", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &welcomeServiceManyPeopleComingAtTheMomentClient{stream}
+	return x, nil
+}
+
+type WelcomeService_ManyPeopleComingAtTheMomentClient interface {
+	Send(*WelcomeRequest) error
+	Recv() (*WelcomeResponse, error)
+	grpc.ClientStream
+}
+
+type welcomeServiceManyPeopleComingAtTheMomentClient struct {
+	grpc.ClientStream
+}
+
+func (x *welcomeServiceManyPeopleComingAtTheMomentClient) Send(m *WelcomeRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *welcomeServiceManyPeopleComingAtTheMomentClient) Recv() (*WelcomeResponse, error) {
+	m := new(WelcomeResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // WelcomeServiceServer is the server API for WelcomeService service.
 // All implementations must embed UnimplementedWelcomeServiceServer
 // for forward compatibility
@@ -123,6 +156,8 @@ type WelcomeServiceServer interface {
 	GetGreetings(*WelcomeRequest, WelcomeService_GetGreetingsServer) error
 	// client streaming example
 	ToManyPeopleComing(WelcomeService_ToManyPeopleComingServer) error
+	// bidirectional streaming example
+	ManyPeopleComingAtTheMoment(WelcomeService_ManyPeopleComingAtTheMomentServer) error
 	mustEmbedUnimplementedWelcomeServiceServer()
 }
 
@@ -138,6 +173,9 @@ func (UnimplementedWelcomeServiceServer) GetGreetings(*WelcomeRequest, WelcomeSe
 }
 func (UnimplementedWelcomeServiceServer) ToManyPeopleComing(WelcomeService_ToManyPeopleComingServer) error {
 	return status.Errorf(codes.Unimplemented, "method ToManyPeopleComing not implemented")
+}
+func (UnimplementedWelcomeServiceServer) ManyPeopleComingAtTheMoment(WelcomeService_ManyPeopleComingAtTheMomentServer) error {
+	return status.Errorf(codes.Unimplemented, "method ManyPeopleComingAtTheMoment not implemented")
 }
 func (UnimplementedWelcomeServiceServer) mustEmbedUnimplementedWelcomeServiceServer() {}
 
@@ -217,6 +255,32 @@ func (x *welcomeServiceToManyPeopleComingServer) Recv() (*WelcomeRequest, error)
 	return m, nil
 }
 
+func _WelcomeService_ManyPeopleComingAtTheMoment_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(WelcomeServiceServer).ManyPeopleComingAtTheMoment(&welcomeServiceManyPeopleComingAtTheMomentServer{stream})
+}
+
+type WelcomeService_ManyPeopleComingAtTheMomentServer interface {
+	Send(*WelcomeResponse) error
+	Recv() (*WelcomeRequest, error)
+	grpc.ServerStream
+}
+
+type welcomeServiceManyPeopleComingAtTheMomentServer struct {
+	grpc.ServerStream
+}
+
+func (x *welcomeServiceManyPeopleComingAtTheMomentServer) Send(m *WelcomeResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *welcomeServiceManyPeopleComingAtTheMomentServer) Recv() (*WelcomeRequest, error) {
+	m := new(WelcomeRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // WelcomeService_ServiceDesc is the grpc.ServiceDesc for WelcomeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -238,6 +302,12 @@ var WelcomeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ToManyPeopleComing",
 			Handler:       _WelcomeService_ToManyPeopleComing_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "ManyPeopleComingAtTheMoment",
+			Handler:       _WelcomeService_ManyPeopleComingAtTheMoment_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},
