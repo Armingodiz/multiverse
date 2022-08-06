@@ -26,4 +26,6 @@ service WelcomeService {
     rpc Welcome(WelcomeRequest) returns (WelcomeResponse) {};
     // server streaming example
     rpc GetGreetings(WelcomeRequest) returns (stream WelcomeResponse) {};
+    // client streaming example
+    rpc ToManyPeopleComing(stream WelcomeRequest) returns (WelcomeResponse) {};
 }

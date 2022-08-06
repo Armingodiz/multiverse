@@ -26,6 +26,8 @@ type WelcomeServiceClient interface {
 	Welcome(ctx context.Context, in *WelcomeRequest, opts ...grpc.CallOption) (*WelcomeResponse, error)
 	// server streaming example
 	GetGreetings(ctx context.Context, in *WelcomeRequest, opts ...grpc.CallOption) (WelcomeService_GetGreetingsClient, error)
+	// client streaming example
+	ToManyPeopleComing(ctx context.Context, opts ...grpc.CallOption) (WelcomeService_ToManyPeopleComingClient, error)
 }
 
 type welcomeServiceClient struct {
@@ -77,6 +79,40 @@ func (x *welcomeServiceGetGreetingsClient) Recv() (*WelcomeResponse, error) {
 	return m, nil
 }
 
+func (c *welcomeServiceClient) ToManyPeopleComing(ctx context.Context, opts ...grpc.CallOption) (WelcomeService_ToManyPeopleComingClient, error) {
+	stream, err := c.cc.NewStream(ctx, &WelcomeService_ServiceDesc.Streams[1], "/welcomer.WelcomeService/ToManyPeopleComing", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &welcomeServiceToManyPeopleComingClient{stream}
+	return x, nil
+}
+
+type WelcomeService_ToManyPeopleComingClient interface {
+	Send(*WelcomeRequest) error
+	CloseAndRecv() (*WelcomeResponse, error)
+	grpc.ClientStream
+}
+
+type welcomeServiceToManyPeopleComingClient struct {
+	grpc.ClientStream
+}
+
+func (x *welcomeServiceToManyPeopleComingClient) Send(m *WelcomeRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *welcomeServiceToManyPeopleComingClient) CloseAndRecv() (*WelcomeResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(WelcomeResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // WelcomeServiceServer is the server API for WelcomeService service.
 // All implementations must embed UnimplementedWelcomeServiceServer
 // for forward compatibility
@@ -85,6 +121,8 @@ type WelcomeServiceServer interface {
 	Welcome(context.Context, *WelcomeRequest) (*WelcomeResponse, error)
 	// server streaming example
 	GetGreetings(*WelcomeRequest, WelcomeService_GetGreetingsServer) error
+	// client streaming example
+	ToManyPeopleComing(WelcomeService_ToManyPeopleComingServer) error
 	mustEmbedUnimplementedWelcomeServiceServer()
 }
 
@@ -97,6 +135,9 @@ func (UnimplementedWelcomeServiceServer) Welcome(context.Context, *WelcomeReques
 }
 func (UnimplementedWelcomeServiceServer) GetGreetings(*WelcomeRequest, WelcomeService_GetGreetingsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetGreetings not implemented")
+}
+func (UnimplementedWelcomeServiceServer) ToManyPeopleComing(WelcomeService_ToManyPeopleComingServer) error {
+	return status.Errorf(codes.Unimplemented, "method ToManyPeopleComing not implemented")
 }
 func (UnimplementedWelcomeServiceServer) mustEmbedUnimplementedWelcomeServiceServer() {}
 
@@ -150,6 +191,32 @@ func (x *welcomeServiceGetGreetingsServer) Send(m *WelcomeResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _WelcomeService_ToManyPeopleComing_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(WelcomeServiceServer).ToManyPeopleComing(&welcomeServiceToManyPeopleComingServer{stream})
+}
+
+type WelcomeService_ToManyPeopleComingServer interface {
+	SendAndClose(*WelcomeResponse) error
+	Recv() (*WelcomeRequest, error)
+	grpc.ServerStream
+}
+
+type welcomeServiceToManyPeopleComingServer struct {
+	grpc.ServerStream
+}
+
+func (x *welcomeServiceToManyPeopleComingServer) SendAndClose(m *WelcomeResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *welcomeServiceToManyPeopleComingServer) Recv() (*WelcomeRequest, error) {
+	m := new(WelcomeRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // WelcomeService_ServiceDesc is the grpc.ServiceDesc for WelcomeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -167,6 +234,11 @@ var WelcomeService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "GetGreetings",
 			Handler:       _WelcomeService_GetGreetings_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "ToManyPeopleComing",
+			Handler:       _WelcomeService_ToManyPeopleComing_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "welcomer/welcomepb/welcome.proto",

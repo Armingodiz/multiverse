@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"multiverse/welcomer/welcomepb"
 	"net"
 	"time"
@@ -27,6 +28,22 @@ func (s *server) GetGreetings(in *welcomepb.WelcomeRequest, stream welcomepb.Wel
 		time.Sleep(time.Second)
 	}
 	return nil
+}
+
+func (s *server) ToManyPeopleComing(stream welcomepb.WelcomeService_ToManyPeopleComingServer) error {
+	finalRes := ""
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			stream.SendAndClose(&welcomepb.WelcomeResponse{Result: finalRes})
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		arrival := in.GetArrival().String()
+		finalRes += in.User.Name + "from " + in.User.Country + " you came at " + arrival + "\n"
+	}
 }
 
 func main() {

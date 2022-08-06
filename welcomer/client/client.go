@@ -41,7 +41,14 @@ func main() {
 		} else {
 			panic(err)
 		}
-
+	}
+	err = client.ToManyPeopleComing()
+	if err != nil {
+		if err == io.EOF {
+			fmt.Println("All creetings reveived")
+		} else {
+			panic(err)
+		}
 	}
 }
 
@@ -72,4 +79,32 @@ func (client *Client) GetGreetings(user welcomepb.UserInfo) error {
 		}
 		fmt.Println("response:", response)
 	}
+}
+
+func (client *Client) ToManyPeopleComing() error {
+	stream, err := client.grpcClient.ToManyPeopleComing(context.Background())
+	if err != nil {
+		return err
+	}
+	for i := 0; i < 10; i++ {
+		user := welcomepb.UserInfo{
+			Name:    "Armin" + fmt.Sprintf("%d", i),
+			Country: "Iran",
+			Age:     20 + int32(i),
+		}
+		if err != nil {
+			return err
+		}
+		time.Sleep(time.Millisecond * 200)
+		stream.Send(&welcomepb.WelcomeRequest{
+			User:    &user,
+			Arrival: timestamppb.New(time.Now()),
+		})
+	}
+	response, err := stream.CloseAndRecv()
+	if err != nil {
+		return err
+	}
+	fmt.Println("response of to many people comeing is: ", response)
+	return nil
 }

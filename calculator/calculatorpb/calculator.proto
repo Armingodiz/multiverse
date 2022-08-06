@@ -24,5 +24,6 @@ message PrimeNumberDecompositionResponse {
 service Calculator {
   // unary example 
   rpc Add(AddRequest) returns (AddResponse) {}
+  // server streaming example
   rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {}
 }
