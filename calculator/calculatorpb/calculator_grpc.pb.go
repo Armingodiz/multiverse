@@ -24,7 +24,10 @@ const _ = grpc.SupportPackageIsVersion7
 type CalculatorClient interface {
 	// unary example
 	Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*AddResponse, error)
+	// server streaming example
 	PrimeNumberDecomposition(ctx context.Context, in *PrimeNumberDecompositionRequest, opts ...grpc.CallOption) (Calculator_PrimeNumberDecompositionClient, error)
+	// client streaming example
+	ComputeAverage(ctx context.Context, opts ...grpc.CallOption) (Calculator_ComputeAverageClient, error)
 }
 
 type calculatorClient struct {
@@ -76,13 +79,50 @@ func (x *calculatorPrimeNumberDecompositionClient) Recv() (*PrimeNumberDecomposi
 	return m, nil
 }
 
+func (c *calculatorClient) ComputeAverage(ctx context.Context, opts ...grpc.CallOption) (Calculator_ComputeAverageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Calculator_ServiceDesc.Streams[1], "/calculator.Calculator/ComputeAverage", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &calculatorComputeAverageClient{stream}
+	return x, nil
+}
+
+type Calculator_ComputeAverageClient interface {
+	Send(*ComputeAverageRequest) error
+	CloseAndRecv() (*ComputeAverageResponse, error)
+	grpc.ClientStream
+}
+
+type calculatorComputeAverageClient struct {
+	grpc.ClientStream
+}
+
+func (x *calculatorComputeAverageClient) Send(m *ComputeAverageRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *calculatorComputeAverageClient) CloseAndRecv() (*ComputeAverageResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(ComputeAverageResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // CalculatorServer is the server API for Calculator service.
 // All implementations must embed UnimplementedCalculatorServer
 // for forward compatibility
 type CalculatorServer interface {
 	// unary example
 	Add(context.Context, *AddRequest) (*AddResponse, error)
+	// server streaming example
 	PrimeNumberDecomposition(*PrimeNumberDecompositionRequest, Calculator_PrimeNumberDecompositionServer) error
+	// client streaming example
+	ComputeAverage(Calculator_ComputeAverageServer) error
 	mustEmbedUnimplementedCalculatorServer()
 }
 
@@ -95,6 +135,9 @@ func (UnimplementedCalculatorServer) Add(context.Context, *AddRequest) (*AddResp
 }
 func (UnimplementedCalculatorServer) PrimeNumberDecomposition(*PrimeNumberDecompositionRequest, Calculator_PrimeNumberDecompositionServer) error {
 	return status.Errorf(codes.Unimplemented, "method PrimeNumberDecomposition not implemented")
+}
+func (UnimplementedCalculatorServer) ComputeAverage(Calculator_ComputeAverageServer) error {
+	return status.Errorf(codes.Unimplemented, "method ComputeAverage not implemented")
 }
 func (UnimplementedCalculatorServer) mustEmbedUnimplementedCalculatorServer() {}
 
@@ -148,6 +191,32 @@ func (x *calculatorPrimeNumberDecompositionServer) Send(m *PrimeNumberDecomposit
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Calculator_ComputeAverage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(CalculatorServer).ComputeAverage(&calculatorComputeAverageServer{stream})
+}
+
+type Calculator_ComputeAverageServer interface {
+	SendAndClose(*ComputeAverageResponse) error
+	Recv() (*ComputeAverageRequest, error)
+	grpc.ServerStream
+}
+
+type calculatorComputeAverageServer struct {
+	grpc.ServerStream
+}
+
+func (x *calculatorComputeAverageServer) SendAndClose(m *ComputeAverageResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *calculatorComputeAverageServer) Recv() (*ComputeAverageRequest, error) {
+	m := new(ComputeAverageRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Calculator_ServiceDesc is the grpc.ServiceDesc for Calculator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -165,6 +234,11 @@ var Calculator_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "PrimeNumberDecomposition",
 			Handler:       _Calculator_PrimeNumberDecomposition_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "ComputeAverage",
+			Handler:       _Calculator_ComputeAverage_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "calculator/calculatorpb/calculator.proto",

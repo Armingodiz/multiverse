@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"multiverse/calculator/calculatorpb"
 	"net"
 
@@ -30,6 +31,24 @@ func (s *server) PrimeNumberDecomposition(in *calculatorpb.PrimeNumberDecomposit
 		}
 	}
 	return nil
+}
+
+func (s *server) ComputeAverage(stream calculatorpb.Calculator_ComputeAverageServer) error {
+	var sum int32
+	var count int32
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&calculatorpb.ComputeAverageResponse{
+				Average: float64(sum) / float64(count),
+			})
+		}
+		if err != nil {
+			return err
+		}
+		sum += in.GetNumbers()
+		count++
+	}
 }
 
 func main() {

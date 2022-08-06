@@ -31,6 +31,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = client.ComputeAverage()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (client *Client) Add(a, b int32) (*calculatorpb.AddResponse, error) {
@@ -48,6 +52,7 @@ func (client *Client) PrimeNumberDecomposition(number int64) error {
 	if err != nil {
 		return err
 	}
+	fmt.Print("Prime number decomposition: ")
 	for {
 		response, err := responseStream.Recv()
 		if err == io.EOF {
@@ -56,7 +61,27 @@ func (client *Client) PrimeNumberDecomposition(number int64) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(response.GetPrimeFactor())
+		fmt.Print(response.GetPrimeFactor())
+		fmt.Print(" ")
 	}
+	fmt.Println()
+	return nil
+}
+
+func (client *Client) ComputeAverage() error {
+	stream, err := client.grpcClient.ComputeAverage(context.Background())
+	if err != nil {
+		return err
+	}
+	for i := 10; i < 200; i += 34 {
+		stream.Send(&calculatorpb.ComputeAverageRequest{
+			Numbers: int32(i),
+		})
+	}
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		return err
+	}
+	fmt.Println("average of getAverage requests: ", res.GetAverage())
 	return nil
 }
