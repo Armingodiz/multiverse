@@ -24,4 +24,6 @@ message WelcomeResponse {
 service WelcomeService {
     // unary example
     rpc Welcome(WelcomeRequest) returns (WelcomeResponse) {};
+    // server streaming example
+    rpc GetGreetings(WelcomeRequest) returns (stream WelcomeResponse) {};
 }
