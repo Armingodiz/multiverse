@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"multiverse/welcomer/welcomepb"
 	"time"
 
@@ -23,15 +24,25 @@ func main() {
 	defer conn.Close()
 	cli := welcomepb.NewWelcomeServiceClient(conn)
 	client := &Client{cli}
-	response, err := client.Welcome(welcomepb.UserInfo{
+	user := welcomepb.UserInfo{
 		Name:    "Armin",
 		Country: "Iran",
 		Age:     21,
-	})
+	}
+	response, err := client.Welcome(user)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("response:", response)
+	err = client.GetGreetings(user)
+	if err != nil {
+		if err == io.EOF {
+			fmt.Println("All creetings reveived")
+		} else {
+			panic(err)
+		}
+
+	}
 }
 
 func (client *Client) Welcome(user welcomepb.UserInfo) (*welcomepb.WelcomeResponse, error) {
@@ -44,4 +55,21 @@ func (client *Client) Welcome(user welcomepb.UserInfo) (*welcomepb.WelcomeRespon
 		Arrival: timestamppb.New(time.Now()),
 	})
 	return response, err
+}
+
+func (client *Client) GetGreetings(user welcomepb.UserInfo) error {
+	resStream, err := client.grpcClient.GetGreetings(context.Background(), &welcomepb.WelcomeRequest{
+		User:    &user,
+		Arrival: timestamppb.New(time.Now()),
+	})
+	if err != nil {
+		return err
+	}
+	for {
+		response, err := resStream.Recv()
+		if err != nil {
+			return err
+		}
+		fmt.Println("response:", response)
+	}
 }
