@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"multiverse/calculator/calculatorpb"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -32,6 +33,10 @@ func main() {
 		panic(err)
 	}
 	err = client.ComputeAverage()
+	if err != nil {
+		panic(err)
+	}
+	err = client.FindMaximum()
 	if err != nil {
 		panic(err)
 	}
@@ -84,4 +89,48 @@ func (client *Client) ComputeAverage() error {
 	}
 	fmt.Println("average of getAverage requests: ", res.GetAverage())
 	return nil
+}
+
+func (client *Client) FindMaximum() error {
+	stream, err := client.grpcClient.FindMaximum(context.Background())
+	if err != nil {
+		return err
+	}
+	done := make(chan bool)
+	errChan := make(chan error)
+	go func() {
+		for i := 0; i < 10; i++ {
+			err = stream.Send(&calculatorpb.FindMaximumRequest{
+				Number: int32(i),
+			})
+			if err != nil {
+				errChan <- err
+				return
+			}
+			time.Sleep(time.Millisecond * 200)
+		}
+		stream.CloseSend()
+	}()
+	go func() {
+		for {
+			response, err := stream.Recv()
+			if err == io.EOF {
+				done <- true
+				return
+			}
+			if err != nil {
+				errChan <- err
+				return
+			}
+			fmt.Println("current", response)
+		}
+	}()
+	for {
+		select {
+		case <-done:
+			return nil
+		case err := <-errChan:
+			return err
+		}
+	}
 }
