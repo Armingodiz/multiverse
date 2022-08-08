@@ -27,3 +27,27 @@ func (u *UserController) Signup() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"status": "created"})
 	}
 }
+
+func (u *UserController) GetUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email := c.Param("email")
+		user, err := u.UserService.GetUser(email)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"user": user})
+	}
+}
+
+func (u *UserController) DeleteUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email := c.Param("email")
+		err := u.UserService.DeleteUser(email)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+	}
+}

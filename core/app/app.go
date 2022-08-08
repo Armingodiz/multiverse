@@ -31,12 +31,14 @@ func routing(r *gin.Engine) {
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	Store := store.NewMongoStore()
-	UserService := userService.NewUserService(&Store)
+	UserService := userService.NewUserService(Store)
 	UserController := userController.UserController{UserService: UserService}
 	healthCheckController := health.NewHealthCheckController()
 	//unprotected routes
 	r.GET("/health", healthCheckController.GetStatus())
-	r.GET("/user/signup", UserController.Signup())
+	r.POST("/user/signup", UserController.Signup())
+	r.GET("/user/:email", UserController.GetUser())
+	r.DELETE("/user/:email", UserController.DeleteUser())
 
 	//Protected routes
 	r.Use(middlewares.JwtAuthorizationMiddleware())
