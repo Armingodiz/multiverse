@@ -30,7 +30,7 @@ func routing(r *gin.Engine) {
 	r.Use(middlewares.CORSMiddleware())
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	Store := store.NewStore()
+	Store := store.NewMongoStore()
 	UserService := userService.NewUserService(&Store)
 	UserController := userController.UserController{UserService: UserService}
 	healthCheckController := health.NewHealthCheckController()
