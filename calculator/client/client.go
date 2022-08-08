@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type Client struct {
@@ -37,6 +39,10 @@ func main() {
 		panic(err)
 	}
 	err = client.FindMaximum()
+	if err != nil {
+		panic(err)
+	}
+	err = client.Divide(10, 2)
 	if err != nil {
 		panic(err)
 	}
@@ -133,4 +139,25 @@ func (client *Client) FindMaximum() error {
 			return err
 		}
 	}
+}
+
+func (client *Client) Divide(num, advisor int) error {
+	resp, err := client.grpcClient.Divide(context.Background(), &calculatorpb.DivideRequest{
+		Numerator:   int32(num),
+		Denominator: int32(advisor),
+	})
+	if err != nil {
+		formattedError, ok := status.FromError(err)
+		if ok {
+			if formattedError.Code() == codes.InvalidArgument {
+				fmt.Println("Divide by zero")
+				return nil
+			}
+			fmt.Println(formattedError.Message())
+			return nil
+		}
+		return err
+	}
+	fmt.Printf("Divide response: quotient= %d, reminder= %d\n", resp.GetQuotient(), resp.GetRemainder())
+	return nil
 }

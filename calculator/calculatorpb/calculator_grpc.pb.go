@@ -30,6 +30,9 @@ type CalculatorClient interface {
 	ComputeAverage(ctx context.Context, opts ...grpc.CallOption) (Calculator_ComputeAverageClient, error)
 	// bidirectional streaming example
 	FindMaximum(ctx context.Context, opts ...grpc.CallOption) (Calculator_FindMaximumClient, error)
+	// unary example with error handling
+	//error handeling: rpc may throw InvalidArgument code if we pass 0 as denominator
+	Divide(ctx context.Context, in *DivideRequest, opts ...grpc.CallOption) (*DivideResponse, error)
 }
 
 type calculatorClient struct {
@@ -146,6 +149,15 @@ func (x *calculatorFindMaximumClient) Recv() (*FindMaximumResponse, error) {
 	return m, nil
 }
 
+func (c *calculatorClient) Divide(ctx context.Context, in *DivideRequest, opts ...grpc.CallOption) (*DivideResponse, error) {
+	out := new(DivideResponse)
+	err := c.cc.Invoke(ctx, "/calculator.Calculator/Divide", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CalculatorServer is the server API for Calculator service.
 // All implementations must embed UnimplementedCalculatorServer
 // for forward compatibility
@@ -158,6 +170,9 @@ type CalculatorServer interface {
 	ComputeAverage(Calculator_ComputeAverageServer) error
 	// bidirectional streaming example
 	FindMaximum(Calculator_FindMaximumServer) error
+	// unary example with error handling
+	//error handeling: rpc may throw InvalidArgument code if we pass 0 as denominator
+	Divide(context.Context, *DivideRequest) (*DivideResponse, error)
 	mustEmbedUnimplementedCalculatorServer()
 }
 
@@ -176,6 +191,9 @@ func (UnimplementedCalculatorServer) ComputeAverage(Calculator_ComputeAverageSer
 }
 func (UnimplementedCalculatorServer) FindMaximum(Calculator_FindMaximumServer) error {
 	return status.Errorf(codes.Unimplemented, "method FindMaximum not implemented")
+}
+func (UnimplementedCalculatorServer) Divide(context.Context, *DivideRequest) (*DivideResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Divide not implemented")
 }
 func (UnimplementedCalculatorServer) mustEmbedUnimplementedCalculatorServer() {}
 
@@ -281,6 +299,24 @@ func (x *calculatorFindMaximumServer) Recv() (*FindMaximumRequest, error) {
 	return m, nil
 }
 
+func _Calculator_Divide_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DivideRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalculatorServer).Divide(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/calculator.Calculator/Divide",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalculatorServer).Divide(ctx, req.(*DivideRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Calculator_ServiceDesc is the grpc.ServiceDesc for Calculator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -291,6 +327,10 @@ var Calculator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Add",
 			Handler:    _Calculator_Add_Handler,
+		},
+		{
+			MethodName: "Divide",
+			Handler:    _Calculator_Divide_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

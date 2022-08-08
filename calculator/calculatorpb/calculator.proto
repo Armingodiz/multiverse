@@ -37,6 +37,16 @@ message FindMaximumResponse {
   int32 maximum = 1;
 }
 
+message DivideRequest {
+  int32 numerator = 1;
+  int32 denominator = 2;
+}
+
+message DivideResponse {
+  int32 quotient = 1;
+  int32 remainder = 2;
+}
+
 service Calculator {
   // unary example 
   rpc Add(AddRequest) returns (AddResponse) {}
@@ -46,4 +56,7 @@ service Calculator {
   rpc ComputeAverage(stream ComputeAverageRequest) returns (ComputeAverageResponse) {}
   // bidirectional streaming example
   rpc FindMaximum(stream FindMaximumRequest) returns (stream FindMaximumResponse) {}
+  // unary example with error handling
+  //error handeling: rpc may throw InvalidArgument code if we pass 0 as denominator
+  rpc Divide(DivideRequest) returns (DivideResponse) {}
 }

@@ -7,6 +7,8 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct {
@@ -68,6 +70,17 @@ func (s *server) FindMaximum(stream calculatorpb.Calculator_FindMaximumServer) e
 			})
 		}
 	}
+}
+
+func (s *server) Divide(ctx context.Context, in *calculatorpb.DivideRequest) (*calculatorpb.DivideResponse, error) {
+	divisor := in.GetDenominator()
+	if divisor == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "divisor cannot be zero")
+	}
+	return &calculatorpb.DivideResponse{
+		Quotient:  in.GetNumerator() / divisor,
+		Remainder: in.GetNumerator() % divisor,
+	}, nil
 }
 
 func main() {
