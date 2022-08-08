@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"multiverse/core/config"
 	"multiverse/core/controllers/health"
 	"multiverse/core/controllers/userController"
@@ -58,8 +57,5 @@ func getMongoDbCollection() *mongo.Collection {
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		panic(err)
 	}
-	fmt.Println(config.Configs.Database.DbName)
-	fmt.Println(config.Configs.Database.CollectionName)
-	collection := client.Database(config.Configs.Database.DbName).Collection(config.Configs.Database.CollectionName)
-	return collection
+	return client.Database(config.Configs.Database.DbName).Collection(config.Configs.Database.CollectionName)
 }

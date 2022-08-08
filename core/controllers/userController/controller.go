@@ -20,7 +20,7 @@ func (u *UserController) Signup() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		user.RegistrationDate = time.Now().GoString()
+		user.RegistrationDate = time.Now().String()
 		err := u.UserService.CreateUser(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

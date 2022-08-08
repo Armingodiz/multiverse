@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"errors"
-	"fmt"
 	"multiverse/core/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,7 +24,6 @@ type MongoStore struct {
 }
 
 func (s *MongoStore) CreateUser(ctx context.Context, user *models.User) error {
-	fmt.Println(s.Collection.Database())
 	res, err := s.Collection.InsertOne(ctx, user)
 	if err != nil {
 		return err
