@@ -24,7 +24,7 @@ services:
       - 27017:27017
     restart: unless-stopped
 
-  mongoExpress:
+  mongoExpress: # gui service for mongodb
     image : mongo-express
     depends_on:
       - mongodb
