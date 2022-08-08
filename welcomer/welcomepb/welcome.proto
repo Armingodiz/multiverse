@@ -30,4 +30,6 @@ service WelcomeService {
     rpc ToManyPeopleComing(stream WelcomeRequest) returns (WelcomeResponse) {};
     // bidirectional streaming example
     rpc ManyPeopleComingAtTheMoment(stream WelcomeRequest) returns (stream WelcomeResponse) {};
+    // timeout example
+    rpc LongWelcome(WelcomeRequest) returns (WelcomeResponse) {};
 }

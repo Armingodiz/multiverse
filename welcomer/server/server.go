@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct {
@@ -60,6 +62,17 @@ func (s *server) ManyPeopleComingAtTheMoment(stream welcomepb.WelcomeService_Man
 			return err
 		}
 	}
+}
+
+func (s *server) LongWelcome(ctx context.Context, in *welcomepb.WelcomeRequest) (*welcomepb.WelcomeResponse, error) {
+	for i := 0; i < 5; i++ {
+		// we dont call sleep(5 * seconds) because we want to check the context every second to be able to cancel the request and stop using server recources
+		time.Sleep(time.Second)
+		if ctx.Err() == context.DeadlineExceeded {
+			return nil, status.Errorf(codes.DeadlineExceeded, "deadline exceeded")
+		}
+	}
+	return &welcomepb.WelcomeResponse{Result: "Hello " + in.User.Name + " from: " + in.User.Country + " you came at " + in.GetArrival().String()}, nil
 }
 
 func main() {

@@ -30,6 +30,8 @@ type WelcomeServiceClient interface {
 	ToManyPeopleComing(ctx context.Context, opts ...grpc.CallOption) (WelcomeService_ToManyPeopleComingClient, error)
 	// bidirectional streaming example
 	ManyPeopleComingAtTheMoment(ctx context.Context, opts ...grpc.CallOption) (WelcomeService_ManyPeopleComingAtTheMomentClient, error)
+	// timeout example
+	LongWelcome(ctx context.Context, in *WelcomeRequest, opts ...grpc.CallOption) (*WelcomeResponse, error)
 }
 
 type welcomeServiceClient struct {
@@ -146,6 +148,15 @@ func (x *welcomeServiceManyPeopleComingAtTheMomentClient) Recv() (*WelcomeRespon
 	return m, nil
 }
 
+func (c *welcomeServiceClient) LongWelcome(ctx context.Context, in *WelcomeRequest, opts ...grpc.CallOption) (*WelcomeResponse, error) {
+	out := new(WelcomeResponse)
+	err := c.cc.Invoke(ctx, "/welcomer.WelcomeService/LongWelcome", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WelcomeServiceServer is the server API for WelcomeService service.
 // All implementations must embed UnimplementedWelcomeServiceServer
 // for forward compatibility
@@ -158,6 +169,8 @@ type WelcomeServiceServer interface {
 	ToManyPeopleComing(WelcomeService_ToManyPeopleComingServer) error
 	// bidirectional streaming example
 	ManyPeopleComingAtTheMoment(WelcomeService_ManyPeopleComingAtTheMomentServer) error
+	// timeout example
+	LongWelcome(context.Context, *WelcomeRequest) (*WelcomeResponse, error)
 	mustEmbedUnimplementedWelcomeServiceServer()
 }
 
@@ -176,6 +189,9 @@ func (UnimplementedWelcomeServiceServer) ToManyPeopleComing(WelcomeService_ToMan
 }
 func (UnimplementedWelcomeServiceServer) ManyPeopleComingAtTheMoment(WelcomeService_ManyPeopleComingAtTheMomentServer) error {
 	return status.Errorf(codes.Unimplemented, "method ManyPeopleComingAtTheMoment not implemented")
+}
+func (UnimplementedWelcomeServiceServer) LongWelcome(context.Context, *WelcomeRequest) (*WelcomeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LongWelcome not implemented")
 }
 func (UnimplementedWelcomeServiceServer) mustEmbedUnimplementedWelcomeServiceServer() {}
 
@@ -281,6 +297,24 @@ func (x *welcomeServiceManyPeopleComingAtTheMomentServer) Recv() (*WelcomeReques
 	return m, nil
 }
 
+func _WelcomeService_LongWelcome_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WelcomeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WelcomeServiceServer).LongWelcome(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/welcomer.WelcomeService/LongWelcome",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WelcomeServiceServer).LongWelcome(ctx, req.(*WelcomeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WelcomeService_ServiceDesc is the grpc.ServiceDesc for WelcomeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -291,6 +325,10 @@ var WelcomeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Welcome",
 			Handler:    _WelcomeService_Welcome_Handler,
+		},
+		{
+			MethodName: "LongWelcome",
+			Handler:    _WelcomeService_LongWelcome_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
