@@ -10,7 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -20,12 +20,22 @@ type Client struct {
 }
 
 func main() {
-	conn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials())) // for now because we are dont have a certificate
+	var creds credentials.TransportCredentials
+	var err error
+	useSsl := false // TODO make this configurable
+	if useSsl {
+		creds, err = credentials.NewClientTLSFromFile("ssl/ca.crt", "") // Certificate Authority Trust certificate
+	}
 	if err != nil {
 		panic(err)
 	}
-	defer conn.Close()
+	conn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(creds)) // for now because we are dont have a certificate
+	if err != nil {
+		panic(err)
+	}
 	cli := welcomepb.NewWelcomeServiceClient(conn)
+	defer conn.Close()
+
 	client := &Client{cli}
 	user := welcomepb.UserInfo{
 		Name:    "Armin",

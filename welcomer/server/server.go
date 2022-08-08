@@ -10,6 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -75,12 +76,21 @@ func (s *server) LongWelcome(ctx context.Context, in *welcomepb.WelcomeRequest) 
 	return &welcomepb.WelcomeResponse{Result: "Hello " + in.User.Name + " from: " + in.User.Country + " you came at " + in.GetArrival().String()}, nil
 }
 
+// all requaments are met
 func main() {
 	listen, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		panic(err)
 	}
-	s := grpc.NewServer()
+	useSsl := true // TODO make this configurable
+	var creds credentials.TransportCredentials
+	if useSsl {
+		creds, err = credentials.NewServerTLSFromFile("ssl/server.crt", "ssl/server.pem")
+		if err != nil {
+			panic(err)
+		}
+	}
+	s := grpc.NewServer(grpc.Creds(creds))
 	welcomepb.RegisterWelcomeServiceServer(s, &server{})
 	if err := s.Serve(listen); err != nil {
 		panic(err)
