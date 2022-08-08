@@ -4,6 +4,7 @@ import (
 	"multiverse/core/models"
 	"multiverse/core/services/userService"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +20,7 @@ func (u *UserController) Signup() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		user.RegistrationDate = time.Now().GoString()
 		err := u.UserService.CreateUser(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

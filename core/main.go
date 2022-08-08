@@ -11,7 +11,7 @@ import (
 
 func init() {
 	log.SetFlags(log.Llongfile)
-	err := godotenv.Load()
+	err := godotenv.Load(".env")
 	if err != nil {
 		panic(err)
 	}

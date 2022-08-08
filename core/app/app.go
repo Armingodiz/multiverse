@@ -1,6 +1,9 @@
 package app
 
 import (
+	"context"
+	"fmt"
+	"multiverse/core/config"
 	"multiverse/core/controllers/health"
 	"multiverse/core/controllers/userController"
 	"multiverse/core/middlewares"
@@ -8,6 +11,9 @@ import (
 	"multiverse/core/store"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 type App struct {
@@ -30,7 +36,7 @@ func routing(r *gin.Engine) {
 	r.Use(middlewares.CORSMiddleware())
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	Store := store.NewMongoStore()
+	Store := store.NewMongoStore(getMongoDbCollection())
 	UserService := userService.NewUserService(Store)
 	UserController := userController.UserController{UserService: UserService}
 	healthCheckController := health.NewHealthCheckController()
@@ -42,4 +48,18 @@ func routing(r *gin.Engine) {
 
 	//Protected routes
 	r.Use(middlewares.JwtAuthorizationMiddleware())
+}
+
+func getMongoDbCollection() *mongo.Collection {
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.Configs.Database.Url))
+	if err != nil {
+		panic(err)
+	}
+	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+		panic(err)
+	}
+	fmt.Println(config.Configs.Database.DbName)
+	fmt.Println(config.Configs.Database.CollectionName)
+	collection := client.Database(config.Configs.Database.DbName).Collection(config.Configs.Database.CollectionName)
+	return collection
 }

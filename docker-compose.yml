@@ -1,0 +1,42 @@
+version: '3'
+services:
+
+  core:
+    build:
+      context: .
+      dockerfile: core/Dockerfile
+    hostname: core
+    working_dir: /root/
+    networks:
+      - default
+    ports:
+      - '3000:3000'
+
+  mongodb:
+    image : mongo
+    container_name: mongodb
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./core/store/mongo/data:/data/db
+    ports:
+      - 27017:27017
+    restart: unless-stopped
+
+  mongoExpress:
+    image : mongo-express
+    depends_on:
+      - serviceName: mongodb
+    container_name: mongo-express-container
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    ports:
+      - 8081:8081
+    restart: unless-stopped
+
+
+networks:
+  default:
+    external:
+      name: multiverse
