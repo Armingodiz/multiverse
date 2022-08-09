@@ -12,6 +12,17 @@ services:
     ports:
       - '3000:3000'
 
+  welcomer:
+    build:
+      context: .
+      dockerfile: welcomer/Dockerfile
+    hostname: welcomer
+    working_dir: /root/
+    networks:
+      - default
+    ports:
+      - '8080:8080'
+
   mongodb:
     image : mongo
     container_name: mongodb

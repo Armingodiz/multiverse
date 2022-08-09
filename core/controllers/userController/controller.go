@@ -3,6 +3,7 @@ package userController
 import (
 	"multiverse/core/models"
 	"multiverse/core/services/userService"
+	"multiverse/core/services/welcomerService"
 	"net/http"
 	"time"
 
@@ -10,7 +11,8 @@ import (
 )
 
 type UserController struct {
-	UserService userService.UserService
+	UserService     userService.UserService
+	WelcomerService welcomerService.WelcomerService
 }
 
 func (u *UserController) Signup() gin.HandlerFunc {
@@ -26,7 +28,12 @@ func (u *UserController) Signup() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"status": "created"})
+		message, err := u.WelcomerService.GetWelcomeMessage(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": message.Result})
 	}
 }
 

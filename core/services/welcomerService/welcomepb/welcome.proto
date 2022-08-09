@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package welcomer;
+option go_package = "/welcomepb";
+
+message UserInfo {
+  string name = 1;
+  int32 age = 2;
+  string country = 3;
+}
+
+message WelcomeRequest {
+    UserInfo user = 1;
+    google.protobuf.Timestamp arrival = 2;
+}
+
+message WelcomeResponse {
+    string result = 1;
+}
+
+
+service WelcomeService {
+    // unary example
+    rpc Welcome(WelcomeRequest) returns (WelcomeResponse) {};
+    // server streaming example
+    rpc GetGreetings(WelcomeRequest) returns (stream WelcomeResponse) {};
+    // client streaming example
+    rpc ToManyPeopleComing(stream WelcomeRequest) returns (WelcomeResponse) {};
+    // bidirectional streaming example
+    rpc ManyPeopleComingAtTheMoment(stream WelcomeRequest) returns (stream WelcomeResponse) {};
+    // timeout example
+    rpc LongWelcome(WelcomeRequest) returns (WelcomeResponse) {};
+}

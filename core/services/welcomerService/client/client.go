@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"multiverse/welcomer/welcomepb"
+	"multiverse/core/services/welcomerService/welcomepb"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -22,19 +23,21 @@ type WelcomerClient interface {
 	ManyPeopleComingAtTheMoment() (res []*welcomepb.WelcomeResponse, err error)
 }
 
-func NewWelcomerClient(useSsl bool, host, port string) (WelcomerClient, error) {
+func NewWelcomerConnection(useSsl bool, host, port string) (*grpc.ClientConn, error) {
 	var creds credentials.TransportCredentials
 	var err error
 	if useSsl {
 		creds, err = credentials.NewClientTLSFromFile("ssl/ca.crt", "") // Certificate Authority Trust certificate
+	} else {
+		creds = insecure.NewCredentials()
 	}
 	if err != nil {
 		return nil, err
 	}
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", host, port), grpc.WithTransportCredentials(creds)) // for now because we are dont have a certificate
-	if err != nil {
-		return nil, err
-	}
+	return grpc.Dial(fmt.Sprintf("%s:%s", host, port), grpc.WithTransportCredentials(creds)) // for now because we are dont have a certificate
+}
+
+func NewWelcomerClient(conn *grpc.ClientConn) (WelcomerClient, error) {
 	cli := welcomepb.NewWelcomeServiceClient(conn)
 	return &Client{cli}, nil
 }

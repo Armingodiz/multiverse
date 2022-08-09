@@ -14,16 +14,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type server struct {
+type Server struct {
 	welcomepb.UnimplementedWelcomeServiceServer
 }
 
-func (s *server) Welcome(ctx context.Context, in *welcomepb.WelcomeRequest) (*welcomepb.WelcomeResponse, error) {
+func (s *Server) Welcome(ctx context.Context, in *welcomepb.WelcomeRequest) (*welcomepb.WelcomeResponse, error) {
 	arrival := in.GetArrival().String()
 	return &welcomepb.WelcomeResponse{Result: "Hello " + in.User.Name + " from: " + in.User.Country + " you came at " + arrival}, nil
 }
 
-func (s *server) GetGreetings(in *welcomepb.WelcomeRequest, stream welcomepb.WelcomeService_GetGreetingsServer) error {
+func (s *Server) GetGreetings(in *welcomepb.WelcomeRequest, stream welcomepb.WelcomeService_GetGreetingsServer) error {
 	arrival := in.GetArrival().String()
 	for i := 0; i < 10; i++ {
 		current := arrival + "passed " + fmt.Sprintf("%d", i) + " times"
@@ -33,7 +33,7 @@ func (s *server) GetGreetings(in *welcomepb.WelcomeRequest, stream welcomepb.Wel
 	return nil
 }
 
-func (s *server) ToManyPeopleComing(stream welcomepb.WelcomeService_ToManyPeopleComingServer) error {
+func (s *Server) ToManyPeopleComing(stream welcomepb.WelcomeService_ToManyPeopleComingServer) error {
 	finalRes := ""
 	for {
 		in, err := stream.Recv()
@@ -49,7 +49,7 @@ func (s *server) ToManyPeopleComing(stream welcomepb.WelcomeService_ToManyPeople
 	}
 }
 
-func (s *server) ManyPeopleComingAtTheMoment(stream welcomepb.WelcomeService_ManyPeopleComingAtTheMomentServer) error {
+func (s *Server) ManyPeopleComingAtTheMoment(stream welcomepb.WelcomeService_ManyPeopleComingAtTheMomentServer) error {
 	for {
 		in, err := stream.Recv()
 		if err == io.EOF {
@@ -65,7 +65,7 @@ func (s *server) ManyPeopleComingAtTheMoment(stream welcomepb.WelcomeService_Man
 	}
 }
 
-func (s *server) LongWelcome(ctx context.Context, in *welcomepb.WelcomeRequest) (*welcomepb.WelcomeResponse, error) {
+func (s *Server) LongWelcome(ctx context.Context, in *welcomepb.WelcomeRequest) (*welcomepb.WelcomeResponse, error) {
 	for i := 0; i < 5; i++ {
 		// we dont call sleep(5 * seconds) because we want to check the context every second to be able to cancel the request and stop using server recources
 		time.Sleep(time.Second)
@@ -82,7 +82,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	useSsl := true // TODO make this configurable
+	useSsl := false // TODO make this configurable
 	var creds credentials.TransportCredentials
 	if useSsl {
 		creds, err = credentials.NewServerTLSFromFile("ssl/server.crt", "ssl/server.pem")
@@ -91,7 +91,7 @@ func main() {
 		}
 	}
 	s := grpc.NewServer(grpc.Creds(creds))
-	welcomepb.RegisterWelcomeServiceServer(s, &server{})
+	welcomepb.RegisterWelcomeServiceServer(s, &Server{})
 	if err := s.Serve(listen); err != nil {
 		panic(err)
 	}
