@@ -6,6 +6,7 @@ import (
 	"io"
 	"multiverse/welcomer/welcomepb"
 	"net"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -78,11 +79,25 @@ func (s *Server) LongWelcome(ctx context.Context, in *welcomepb.WelcomeRequest) 
 
 // all requaments are met
 func main() {
-	listen, err := net.Listen("tcp", ":8080")
+	connectionType := os.Getenv("CONNECTION_TYPE")
+	port := os.Getenv("CONNECTION_PORT")
+	useSSl := os.Getenv("USE_SSL")
+	useSsl := false
+	if connectionType == "" {
+		connectionType = "tcp"
+	}
+	if port == "" {
+		port = ":8080"
+	}
+	if useSSl == "" || useSSl == "false" {
+		useSsl = false
+	} else {
+		useSsl = true
+	}
+	listen, err := net.Listen(connectionType, port)
 	if err != nil {
 		panic(err)
 	}
-	useSsl := false // TODO make this configurable
 	var creds credentials.TransportCredentials
 	if useSsl {
 		creds, err = credentials.NewServerTLSFromFile("ssl/server.crt", "ssl/server.pem")

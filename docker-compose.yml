@@ -7,6 +7,10 @@ services:
       dockerfile: core/Dockerfile
     hostname: core
     working_dir: /root/
+    environment:
+      - WELCOMER_SERVER=welcomer
+      - WELCOMER_PORT=8080
+      - WELLCOMER_USE_SSL=false
     networks:
       - default
     ports:
@@ -18,6 +22,10 @@ services:
       dockerfile: welcomer/Dockerfile
     hostname: welcomer
     working_dir: /root/
+    environment:
+      - CONNECTION_TYPE=tcp
+      - CONNECTION_PORT=:8080
+      - USE_SSL=false
     networks:
       - default
     ports:
