@@ -1,0 +1,150 @@
+---
+openapi: 3.0.0
+info:
+  title: multiverse core endpoints
+  description: This is a simple API
+  contact:
+    email: armingodarzi1380@gmail.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/Armingodiz/Multiverse/1.0.0
+  description: SwaggerHub API Auto Mocking
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: developers
+  description: Operations available to regular developers
+paths:
+  /user/signup:
+    post:
+      tags:
+      - developers
+      summary: signup endpoint for user
+      description: Register user
+      operationId: signup
+      requestBody:
+        description: User to add
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        "201":
+          description: user registered
+        "400":
+          description: invalid input, object invalid
+  /user/{email}:
+    get:
+      tags:
+      - developers
+      summary: get user
+      description: |
+        get user by email
+      operationId: get user
+      parameters:
+      - name: email
+        in: path
+        description: pass an optional search string for certain user
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: search results matching criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        "400":
+          description: bad input parameter
+    delete:
+      tags:
+      - admins
+      summary: delete user
+      description: delete user
+      operationId: deleteUser
+      parameters:
+      - name: email
+        in: path
+        description: pass an optional search string for certain user
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: user deleted
+        "400":
+          description: invalid input, object invalid
+  /calculator:
+    post:
+      tags:
+      - developers
+      summary: calculate the given calculation
+      description: calculator get a calculation object and based on the action and inputs returns the result
+      operationId: calculate
+      requestBody:
+        description: given calculation
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Calculation'
+      responses:
+        "200":
+          description: calculation was successful
+        "500":
+          description: unexpected error in server
+components:
+  schemas:
+    User:
+      required:
+      - email
+      - name
+      - password
+      type: object
+      properties:
+        name:
+          type: string
+          example: Armin
+        email:
+          type: string
+          example: armingodarzi1380@gmail.com
+        address:
+          type: string
+          example: mashad_karimi_11_8_7
+        phone_number:
+          type: string
+          example: 0915345****
+        registration_date:
+          type: string
+          example: time.Date(2022, time.August, 9, 0, 56, 39, 286228000, time.Local)
+    Calculation:
+      required:
+      - action
+      type: object
+      properties:
+        action:
+          type: string
+          example: add, max, average, primeDecompose, divide
+        fistNum:
+          type: number
+          example: 10
+        secondNum:
+          type: number
+          example: 20
+        numbers:
+          type: array
+          example:
+          - 1
+          - 2
+          - 3
+          items:
+            type: number
