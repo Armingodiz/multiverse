@@ -41,7 +41,6 @@ type welcomerService struct {
 }
 
 func (s *welcomerService) GetWelcomeMessage(user *models.User) (*welcomepb.WelcomeResponse, error) {
-
 	conn, err := client.NewWelcomerConnection(s.UseSSl, s.Host, s.Port)
 	if err != nil {
 		return nil, err

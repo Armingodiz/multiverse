@@ -15,11 +15,11 @@ import (
 )
 
 type CalculatorClient interface {
-	Add(a, b int32) (*calculatorpb.AddResponse, error)
+	Add(a, b int32) (int32, error)
 	PrimeNumberDecomposition(number int64) (factores []int64, err error)
 	ComputeAverage(nums []int32) (avg float64, err error)
-	FindMaximum(inputChann chan int32) (max int32, err error)
-	Divide(num, advisor int) (q, r int32, err error)
+	FindMaximum(numbers []int32) (max int32, err error)
+	Divide(num, advisor int32) (q, r int32, err error)
 }
 
 type Client struct {
@@ -76,12 +76,15 @@ func NewCalculatorClient(conn *grpc.ClientConn) (CalculatorClient, error) {
 // 	}
 // }
 
-func (client *Client) Add(a, b int32) (*calculatorpb.AddResponse, error) {
+func (client *Client) Add(a, b int32) (int32, error) {
 	response, err := client.grpcClient.Add(context.Background(), &calculatorpb.AddRequest{
 		A: a,
 		B: b,
 	})
-	return response, err
+	if err != nil {
+		return 0, err
+	}
+	return response.GetSum(), nil
 }
 
 func (client *Client) PrimeNumberDecomposition(number int64) (factores []int64, err error) {
@@ -122,7 +125,7 @@ func (client *Client) ComputeAverage(nums []int32) (avg float64, err error) {
 	return res.GetAverage(), nil
 }
 
-func (client *Client) FindMaximum(inputChann chan int32) (max int32, err error) {
+func (client *Client) FindMaximum(numbers []int32) (max int32, err error) {
 	stream, err := client.grpcClient.FindMaximum(context.Background())
 	if err != nil {
 		return
@@ -130,7 +133,7 @@ func (client *Client) FindMaximum(inputChann chan int32) (max int32, err error) 
 	done := make(chan bool)
 	errChan := make(chan error)
 	go func() {
-		for num := range inputChann {
+		for _, num := range numbers {
 			err = stream.Send(&calculatorpb.FindMaximumRequest{
 				Number: num,
 			})
@@ -168,10 +171,10 @@ func (client *Client) FindMaximum(inputChann chan int32) (max int32, err error) 
 	}
 }
 
-func (client *Client) Divide(num, advisor int) (q, r int32, err error) {
+func (client *Client) Divide(num, advisor int32) (q, r int32, err error) {
 	resp, err := client.grpcClient.Divide(context.Background(), &calculatorpb.DivideRequest{
-		Numerator:   int32(num),
-		Denominator: int32(advisor),
+		Numerator:   num,
+		Denominator: advisor,
 	})
 	if err != nil {
 		formattedError, ok := status.FromError(err)

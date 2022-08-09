@@ -1,15 +1,14 @@
 package calculatorService
 
 import (
+	"errors"
+	"multiverse/core/models"
+	"multiverse/core/services/calculatorService/client"
 	"os"
 )
 
 type CalculatorService interface {
-	Add(a, b int32) (int32, error)
-	PrimeNumberDecomposition(number int64) (factores []int64, err error)
-	ComputeAverage(nums []int32) (avg float64, err error)
-	FindMaximum(inputChann chan int32) (max int32, err error)
-	Divide(num, advisor int) (q, r int32, err error)
+	Calculate(calculation models.Calculation) (interface{}, error)
 }
 
 func NewCalculatorService() CalculatorService {
@@ -41,22 +40,32 @@ type calculatorService struct {
 	UseSSl bool
 }
 
-func (c *calculatorService) Add(a, b int32) (int32, error) {
-	return 0, nil
-}
-
-func (c *calculatorService) PrimeNumberDecomposition(number int64) (factores []int64, err error) {
-	return nil, nil
-}
-
-func (c *calculatorService) ComputeAverage(nums []int32) (avg float64, err error) {
-	return 0, nil
-}
-
-func (c *calculatorService) FindMaximum(inputChann chan int32) (max int32, err error) {
-	return 0, nil
-}
-
-func (c *calculatorService) Divide(num, advisor int) (q, r int32, err error) {
-	return 0, 0, nil
+func (c *calculatorService) Calculate(calculation models.Calculation) (interface{}, error) {
+	conn, err := client.NewCalculatorConnection(c.UseSSl, c.Host, c.Port)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	cli, err := client.NewCalculatorClient(conn)
+	if err != nil {
+		return nil, err
+	}
+	switch calculation.Action {
+	case "add":
+		return cli.Add(calculation.FistNum, calculation.SecondNum)
+	case "primeDecompose":
+		return cli.PrimeNumberDecomposition(int64(calculation.FistNum))
+	case "max":
+		return cli.FindMaximum(calculation.Numbers)
+	case "average":
+		return cli.ComputeAverage(calculation.Numbers)
+	case "divide":
+		q, r, err := cli.Divide(calculation.FistNum, calculation.SecondNum)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]int32{"q": q, "r": r}, nil
+	default:
+		return nil, errors.New("unsupported action")
+	}
 }
