@@ -9,44 +9,69 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
+
+type CalculatorClient interface {
+	Add(a, b int32) (*calculatorpb.AddResponse, error)
+	PrimeNumberDecomposition(number int64) (factores []int64, err error)
+	ComputeAverage(nums []int32) (avg float64, err error)
+	FindMaximum(inputChann chan int32) (max int32, err error)
+	Divide(num, advisor int) (q, r int32, err error)
+}
 
 type Client struct {
 	grpcClient calculatorpb.CalculatorClient
 }
 
-func main() {
-	conn, err := grpc.Dial("localhost:8081", grpc.WithTransportCredentials(insecure.NewCredentials())) // for now because we are dont have a certificate
-	if err != nil {
-		panic(err)
+func NewCalculatorClient(useSsl bool, host, port string) (CalculatorClient, error) {
+	var creds credentials.TransportCredentials
+	var err error
+	if useSsl {
+		creds, err = credentials.NewClientTLSFromFile("ssl/ca.crt", "") // Certificate Authority Trust certificate
 	}
-	defer conn.Close()
+	if err != nil {
+		return nil, err
+	}
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", host, port), grpc.WithTransportCredentials(creds)) // for now because we are dont have a certificate
+	if err != nil {
+		return nil, err
+	}
 	cli := calculatorpb.NewCalculatorClient(conn)
-	client := &Client{cli}
-	response, err := client.Add(10, 20)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("response:", response)
-	err = client.PrimeNumberDecomposition(int64(26))
-	if err != nil {
-		panic(err)
-	}
-	err = client.ComputeAverage()
-	if err != nil {
-		panic(err)
-	}
-	err = client.FindMaximum()
-	if err != nil {
-		panic(err)
-	}
-	err = client.Divide(10, 2)
-	if err != nil {
-		panic(err)
-	}
+	return &Client{cli}, nil
 }
+
+// func main() {
+// 	conn, err := grpc.Dial("localhost:8081", grpc.WithTransportCredentials(insecure.NewCredentials())) // for now because we are dont have a certificate
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer conn.Close()
+// 	cli := calculatorpb.NewCalculatorClient(conn)
+// 	client := &Client{cli}
+// 	response, err := client.Add(10, 20)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	fmt.Println("response:", response)
+// 	err = client.PrimeNumberDecomposition(int64(26))
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	err = client.ComputeAverage()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	err = client.FindMaximum()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	err = client.Divide(10, 2)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// }
 
 func (client *Client) Add(a, b int32) (*calculatorpb.AddResponse, error) {
 	response, err := client.grpcClient.Add(context.Background(), &calculatorpb.AddRequest{
@@ -56,58 +81,55 @@ func (client *Client) Add(a, b int32) (*calculatorpb.AddResponse, error) {
 	return response, err
 }
 
-func (client *Client) PrimeNumberDecomposition(number int64) error {
+func (client *Client) PrimeNumberDecomposition(number int64) (factores []int64, err error) {
+	factores = make([]int64, 0)
 	responseStream, err := client.grpcClient.PrimeNumberDecomposition(context.Background(), &calculatorpb.PrimeNumberDecompositionRequest{
 		Number: number,
 	})
 	if err != nil {
-		return err
+		return
 	}
-	fmt.Print("Prime number decomposition: ")
 	for {
 		response, err := responseStream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
-		fmt.Print(response.GetPrimeFactor())
-		fmt.Print(" ")
+		factores = append(factores, response.GetPrimeFactor())
 	}
-	fmt.Println()
-	return nil
+	return factores, nil
 }
 
-func (client *Client) ComputeAverage() error {
+func (client *Client) ComputeAverage(nums []int32) (avg float64, err error) {
 	stream, err := client.grpcClient.ComputeAverage(context.Background())
 	if err != nil {
-		return err
+		return
 	}
-	for i := 10; i < 200; i += 34 {
+	for _, num := range nums {
 		stream.Send(&calculatorpb.ComputeAverageRequest{
-			Numbers: int32(i),
+			Numbers: num,
 		})
 	}
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		return err
+		return
 	}
-	fmt.Println("average of getAverage requests: ", res.GetAverage())
-	return nil
+	return res.GetAverage(), nil
 }
 
-func (client *Client) FindMaximum() error {
+func (client *Client) FindMaximum(inputChann chan int32) (max int32, err error) {
 	stream, err := client.grpcClient.FindMaximum(context.Background())
 	if err != nil {
-		return err
+		return
 	}
 	done := make(chan bool)
 	errChan := make(chan error)
 	go func() {
-		for i := 0; i < 10; i++ {
+		for num := range inputChann {
 			err = stream.Send(&calculatorpb.FindMaximumRequest{
-				Number: int32(i),
+				Number: num,
 			})
 			if err != nil {
 				errChan <- err
@@ -117,10 +139,12 @@ func (client *Client) FindMaximum() error {
 		}
 		stream.CloseSend()
 	}()
-	go func() {
+	max = int32(0)
+	go func(maxNumber *int32) {
 		for {
 			response, err := stream.Recv()
 			if err == io.EOF {
+				*maxNumber = response.GetMaximum()
 				done <- true
 				return
 			}
@@ -130,18 +154,18 @@ func (client *Client) FindMaximum() error {
 			}
 			fmt.Println("current", response)
 		}
-	}()
+	}(&max)
 	for {
 		select {
 		case <-done:
-			return nil
+			return
 		case err := <-errChan:
-			return err
+			return 0, err
 		}
 	}
 }
 
-func (client *Client) Divide(num, advisor int) error {
+func (client *Client) Divide(num, advisor int) (q, r int32, err error) {
 	resp, err := client.grpcClient.Divide(context.Background(), &calculatorpb.DivideRequest{
 		Numerator:   int32(num),
 		Denominator: int32(advisor),
@@ -151,13 +175,12 @@ func (client *Client) Divide(num, advisor int) error {
 		if ok {
 			if formattedError.Code() == codes.InvalidArgument {
 				fmt.Println("Divide by zero")
-				return nil
+				return
 			}
 			fmt.Println(formattedError.Message())
-			return nil
+			return
 		}
-		return err
+		return
 	}
-	fmt.Printf("Divide response: quotient= %d, reminder= %d\n", resp.GetQuotient(), resp.GetRemainder())
-	return nil
+	return resp.GetQuotient(), resp.GetRemainder(), nil
 }
