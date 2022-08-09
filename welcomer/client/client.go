@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -15,60 +15,84 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type Client struct {
-	grpcClient welcomepb.WelcomeServiceClient
+type WelcomerClient interface {
+	Welcome(user welcomepb.UserInfo) (*welcomepb.WelcomeResponse, error)
+	GetGreetings(user welcomepb.UserInfo) ([]*welcomepb.WelcomeResponse, error)
+	ToManyPeopleComing() (res *welcomepb.WelcomeResponse, err error)
+	ManyPeopleComingAtTheMoment() (res []*welcomepb.WelcomeResponse, err error)
 }
 
-func main() {
+func NewWelcomerClient(useSsl bool, host, port string) (WelcomerClient, error) {
 	var creds credentials.TransportCredentials
 	var err error
-	useSsl := false // TODO make this configurable
 	if useSsl {
 		creds, err = credentials.NewClientTLSFromFile("ssl/ca.crt", "") // Certificate Authority Trust certificate
 	}
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	conn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(creds)) // for now because we are dont have a certificate
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", host, port), grpc.WithTransportCredentials(creds)) // for now because we are dont have a certificate
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	cli := welcomepb.NewWelcomeServiceClient(conn)
-	defer conn.Close()
-
-	client := &Client{cli}
-	user := welcomepb.UserInfo{
-		Name:    "Armin",
-		Country: "Iran",
-		Age:     21,
-	}
-	// response, err := client.Welcome(user)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println("response:", response)
-	// err = client.GetGreetings(user)
-	// if err != nil {
-	// 	if err == io.EOF {
-	// 		fmt.Println("All welcomes reveived")
-	// 	} else {
-	// 		panic(err)
-	// 	}
-	// }
-	// err = client.ToManyPeopleComing()
-	// if err != nil {
-	// 	if err == io.EOF {
-	// 		fmt.Println("All welcomes reveived At the moment")
-	// 	} else {
-	// 		panic(err)
-	// 	}
-	// }
-	//err = client.ManyPeopleComingAtTheMoment()
-	err = client.LongWelcome(user, 6)
-	if err != nil {
-		panic(err)
-	}
+	return &Client{cli}, nil
 }
+
+type Client struct {
+	grpcClient welcomepb.WelcomeServiceClient
+}
+
+// func main() {
+// 	var creds credentials.TransportCredentials
+// 	var err error
+// 	useSsl := false // TODO make this configurable
+// 	if useSsl {
+// 		creds, err = credentials.NewClientTLSFromFile("ssl/ca.crt", "") // Certificate Authority Trust certificate
+// 	}
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	conn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(creds)) // for now because we are dont have a certificate
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	cli := welcomepb.NewWelcomeServiceClient(conn)
+// 	defer conn.Close()
+
+// 	client, err := &Client{cli}
+// 	user := welcomepb.UserInfo{
+// 		Name:    "Armin",
+// 		Country: "Iran",
+// 		Age:     21,
+// 	}
+// 	// response, err := client.Welcome(user)
+// 	// if err != nil {
+// 	// 	panic(err)
+// 	// }
+// 	// fmt.Println("response:", response)
+// 	// err = client.GetGreetings(user)
+// 	// if err != nil {
+// 	// 	if err == io.EOF {
+// 	// 		fmt.Println("All welcomes reveived")
+// 	// 	} else {
+// 	// 		panic(err)
+// 	// 	}
+// 	// }
+// 	// err = client.ToManyPeopleComing()
+// 	// if err != nil {
+// 	// 	if err == io.EOF {
+// 	// 		fmt.Println("All welcomes reveived At the moment")
+// 	// 	} else {
+// 	// 		panic(err)
+// 	// 	}
+// 	// }
+// 	//err = client.ManyPeopleComingAtTheMoment()
+// 	err = client.LongWelcome(user, 6)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// }
 
 func (client *Client) Welcome(user welcomepb.UserInfo) (*welcomepb.WelcomeResponse, error) {
 	response, err := client.grpcClient.Welcome(context.Background(), &welcomepb.WelcomeRequest{
@@ -82,27 +106,32 @@ func (client *Client) Welcome(user welcomepb.UserInfo) (*welcomepb.WelcomeRespon
 	return response, err
 }
 
-func (client *Client) GetGreetings(user welcomepb.UserInfo) error {
+func (client *Client) GetGreetings(user welcomepb.UserInfo) ([]*welcomepb.WelcomeResponse, error) {
+	responses := make([]*welcomepb.WelcomeResponse, 0)
 	resStream, err := client.grpcClient.GetGreetings(context.Background(), &welcomepb.WelcomeRequest{
 		User:    &user,
 		Arrival: timestamppb.New(time.Now()),
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for {
 		response, err := resStream.Recv()
 		if err != nil {
-			return err
+			if err == io.EOF {
+				return responses, nil
+			}
+			return nil, err
 		}
+		responses = append(responses, response)
 		fmt.Println("response:", response)
 	}
 }
 
-func (client *Client) ToManyPeopleComing() error {
+func (client *Client) ToManyPeopleComing() (res *welcomepb.WelcomeResponse, err error) {
 	stream, err := client.grpcClient.ToManyPeopleComing(context.Background())
 	if err != nil {
-		return err
+		return
 	}
 	for i := 0; i < 10; i++ {
 		user := welcomepb.UserInfo{
@@ -111,7 +140,7 @@ func (client *Client) ToManyPeopleComing() error {
 			Age:     20 + int32(i),
 		}
 		if err != nil {
-			return err
+			return
 		}
 		time.Sleep(time.Millisecond * 200)
 		stream.Send(&welcomepb.WelcomeRequest{
@@ -121,16 +150,17 @@ func (client *Client) ToManyPeopleComing() error {
 	}
 	response, err := stream.CloseAndRecv()
 	if err != nil {
-		return err
+		return
 	}
 	fmt.Println("response of to many people comeing is: ", response)
-	return nil
+	return response, nil
 }
 
-func (client *Client) ManyPeopleComingAtTheMoment() error {
+func (client *Client) ManyPeopleComingAtTheMoment() (res []*welcomepb.WelcomeResponse, err error) {
 	stream, err := client.grpcClient.ManyPeopleComingAtTheMoment(context.Background())
+	res = make([]*welcomepb.WelcomeResponse, 0)
 	if err != nil {
-		return err
+		return
 	}
 	done := make(chan bool)
 	errChan := make(chan error)
@@ -166,14 +196,15 @@ func (client *Client) ManyPeopleComingAtTheMoment() error {
 				return
 			}
 			fmt.Println("response:", response)
+			res = append(res, response)
 		}
 	}()
 	for {
 		select {
 		case <-done:
-			return nil
+			return
 		case err := <-errChan:
-			return err
+			return nil, err
 		}
 	}
 }

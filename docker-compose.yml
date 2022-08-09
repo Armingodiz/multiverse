@@ -28,7 +28,7 @@ services:
     image : mongo-express
     depends_on:
       - mongodb
-    container_name: mongo-express-container
+    container_name: mongo-gui
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongodb
     ports:
