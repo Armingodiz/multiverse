@@ -2,6 +2,7 @@ package userController
 
 import (
 	"multiverse/core/models"
+	"multiverse/core/services/calculatorService"
 	"multiverse/core/services/userService"
 	"multiverse/core/services/welcomerService"
 	"net/http"
@@ -11,8 +12,9 @@ import (
 )
 
 type UserController struct {
-	UserService     userService.UserService
-	WelcomerService welcomerService.WelcomerService
+	UserService      userService.UserService
+	WelcomerService  welcomerService.WelcomerService
+	CalculatorServie calculatorService.CalculatorService
 }
 
 func (u *UserController) Signup() gin.HandlerFunc {
@@ -58,5 +60,21 @@ func (u *UserController) DeleteUser() gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+	}
+}
+
+func (u *UserController) Calculate() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var calculation models.Calculation
+		if err := c.ShouldBindJSON(&calculation); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		res, err := u.CalculatorServie.Calculate(calculation)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"result": res})
 	}
 }

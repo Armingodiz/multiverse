@@ -46,6 +46,7 @@ func routing(r *gin.Engine) {
 	r.POST("/user/signup", UserController.Signup())
 	r.GET("/user/:email", UserController.GetUser())
 	r.DELETE("/user/:email", UserController.DeleteUser())
+	r.POST("/calculator", UserController.Calculate())
 
 	//Protected routes
 	r.Use(middlewares.JwtAuthorizationMiddleware())
