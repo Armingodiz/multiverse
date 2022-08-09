@@ -150,7 +150,6 @@ func (client *Client) FindMaximum(numbers []int32) (max int32, err error) {
 		for {
 			response, err := stream.Recv()
 			if err == io.EOF {
-				*maxNumber = response.GetMaximum()
 				done <- true
 				return
 			}
@@ -159,6 +158,7 @@ func (client *Client) FindMaximum(numbers []int32) (max int32, err error) {
 				return
 			}
 			fmt.Println("current", response)
+			*maxNumber = response.GetMaximum()
 		}
 	}(&max)
 	for {

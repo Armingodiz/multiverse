@@ -6,6 +6,7 @@ import (
 	"multiverse/core/controllers/health"
 	"multiverse/core/controllers/userController"
 	"multiverse/core/middlewares"
+	"multiverse/core/services/calculatorService"
 	"multiverse/core/services/userService"
 	"multiverse/core/services/welcomerService"
 	"multiverse/core/store"
@@ -39,7 +40,8 @@ func routing(r *gin.Engine) {
 	Store := store.NewMongoStore(getMongoDbCollection())
 	UserService := userService.NewUserService(Store)
 	WelcomerService := welcomerService.NewWelcomerService()
-	UserController := userController.UserController{UserService: UserService, WelcomerService: WelcomerService}
+	CaclulatorService := calculatorService.NewCalculatorService()
+	UserController := userController.UserController{UserService: UserService, WelcomerService: WelcomerService, CalculatorServie: CaclulatorService}
 	healthCheckController := health.NewHealthCheckController()
 	//unprotected routes
 	r.GET("/health", healthCheckController.GetStatus())

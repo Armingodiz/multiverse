@@ -6,3 +6,11 @@ type Calculation struct {
 	SecondNum int32   `json:"secondNum"`
 	Numbers   []int32 `json:"numbers"`
 }
+
+const (
+	ActionAdd            = "add"
+	ActionMax            = "max"
+	ActionAvg            = "average"
+	ActionPrimeDecompose = "primeDecompose"
+	ActionDivide         = "divide"
+)

@@ -11,6 +11,9 @@ services:
       - WELCOMER_SERVER=welcomer
       - WELCOMER_PORT=8080
       - WELLCOMER_USE_SSL=false
+      - CALCULATOR_SERVER=calculator
+      - CALCULATOR_PORT=8082
+      - CALCULATOR_USE_SSL=false
     networks:
       - default
     ports:
@@ -30,6 +33,21 @@ services:
       - default
     ports:
       - '8080:8080'
+
+  calculator:
+    build:
+      context: .
+      dockerfile: calculator/Dockerfile
+    hostname: calculator
+    working_dir: /root/
+    environment:
+      - CONNECTION_TYPE=tcp
+      - CONNECTION_PORT=:8082
+      - USE_SSL=false
+    networks:
+      - default
+    ports:
+      - '8082:8082'
 
   mongodb:
     image : mongo

@@ -46,6 +46,7 @@ func NewCalculatorClient(cc grpc.ClientConnInterface) CalculatorClient {
 func (c *calculatorClient) Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*AddResponse, error) {
 	out := new(AddResponse)
 	err := c.cc.Invoke(ctx, "/calculator.Calculator/Add", in, out, opts...)
+
 	if err != nil {
 		return nil, err
 	}

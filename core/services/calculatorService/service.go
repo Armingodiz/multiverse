@@ -51,15 +51,15 @@ func (c *calculatorService) Calculate(calculation models.Calculation) (interface
 		return nil, err
 	}
 	switch calculation.Action {
-	case "add":
+	case models.ActionAdd:
 		return cli.Add(calculation.FistNum, calculation.SecondNum)
-	case "primeDecompose":
+	case models.ActionPrimeDecompose:
 		return cli.PrimeNumberDecomposition(int64(calculation.FistNum))
-	case "max":
+	case models.ActionMax:
 		return cli.FindMaximum(calculation.Numbers)
-	case "average":
+	case models.ActionAvg:
 		return cli.ComputeAverage(calculation.Numbers)
-	case "divide":
+	case models.ActionDivide:
 		q, r, err := cli.Divide(calculation.FistNum, calculation.SecondNum)
 		if err != nil {
 			return nil, err

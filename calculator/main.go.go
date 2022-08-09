@@ -5,9 +5,11 @@ import (
 	"io"
 	"multiverse/calculator/calculatorpb"
 	"net"
+	"os"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -84,11 +86,33 @@ func (s *server) Divide(ctx context.Context, in *calculatorpb.DivideRequest) (*c
 }
 
 func main() {
-	listen, err := net.Listen("tcp", ":8081")
+	connectionType := os.Getenv("CONNECTION_TYPE")
+	port := os.Getenv("CONNECTION_PORT")
+	useSSl := os.Getenv("USE_SSL")
+	useSsl := false
+	if connectionType == "" {
+		connectionType = "tcp"
+	}
+	if port == "" {
+		port = ":8082"
+	}
+	if useSSl == "" || useSSl == "false" {
+		useSsl = false
+	} else {
+		useSsl = true
+	}
+	listen, err := net.Listen(connectionType, port)
 	if err != nil {
 		panic(err)
 	}
-	s := grpc.NewServer()
+	var creds credentials.TransportCredentials
+	if useSsl {
+		creds, err = credentials.NewServerTLSFromFile("ssl/server.crt", "ssl/server.pem")
+		if err != nil {
+			panic(err)
+		}
+	}
+	s := grpc.NewServer(grpc.Creds(creds))
 	calculatorpb.RegisterCalculatorServer(s, &server{})
 	if err := s.Serve(listen); err != nil {
 		panic(err)
