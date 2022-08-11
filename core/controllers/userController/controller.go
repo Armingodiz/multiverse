@@ -2,6 +2,7 @@ package userController
 
 import (
 	"multiverse/core/models"
+	"multiverse/core/services/brokerService"
 	"multiverse/core/services/calculatorService"
 	"multiverse/core/services/userService"
 	"multiverse/core/services/welcomerService"
@@ -15,6 +16,7 @@ type UserController struct {
 	UserService      userService.UserService
 	WelcomerService  welcomerService.WelcomerService
 	CalculatorServie calculatorService.CalculatorService
+	BrokerService    brokerService.BrokerService
 }
 
 func (u *UserController) Signup() gin.HandlerFunc {
@@ -35,7 +37,15 @@ func (u *UserController) Signup() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"message": message.Result})
+		err = u.BrokerService.Publish(models.Task{
+			Target: user.Email,
+			Text:   message.GetResult(),
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "created"})
 	}
 }
 

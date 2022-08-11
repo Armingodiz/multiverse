@@ -44,7 +44,7 @@ func (r *RabbitMQBrokerService) Publish(task models.Task) error {
 	// publish and subscribe to.
 	_, err = channelRabbitMQ.QueueDeclare(
 		"QueueService1", // queue name
-		true,            // durable
+		false,           // durable
 		false,           // auto delete
 		false,           // exclusive
 		false,           // no wait
