@@ -25,5 +25,5 @@ func init() {
 
 func main() {
 	app := app.NewApp()
-	log.Fatalln(app.Start(""))
+	log.Fatalln(app.Start())
 }
