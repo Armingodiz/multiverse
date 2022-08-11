@@ -14,6 +14,7 @@ services:
       - CALCULATOR_SERVER=calculator
       - CALCULATOR_PORT=8082
       - CALCULATOR_USE_SSL=false
+      - AMQP_SERVER_URL=amqp://guest:guest@message-broker:5672/
     networks:
       - default
     ports:
@@ -48,6 +49,30 @@ services:
       - default
     ports:
       - '8082:8082'
+  
+  notifier:
+    build:
+      context: .
+      dockerfile: notifier/Dockerfile
+    hostname: notifier
+    working_dir: /root/
+    environment:
+      - AMQP_SERVER_URL=amqp://guest:guest@message-broker:5672/
+    networks:
+      - default
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: message-broker
+    ports:
+      - 5672:5672   # for sender and consumer connections
+      - 15672:15672 # for serve RabbitMQ GUI
+    volumes:
+      - ./notifier/services/brokerService/rabbitmq/data/:/var/lib/rabbitmq
+      - ./notifier/services/brokerService/rabbitmq/log/:/var/log/rabbitmq
+    restart: unless-stopped
+    networks:
+      - default
 
   mongodb:
     image : mongo
