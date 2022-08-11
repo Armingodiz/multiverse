@@ -24,6 +24,8 @@ func (a *App) Start() error {
 	if err != nil {
 		return err
 	}
+	defer a.BrokerService.CloseConnection()
+	defer a.BrokerService.CloseChannel()
 	go func() {
 		for task := range taskChann {
 			log.Println("Received task:", task)

@@ -40,16 +40,27 @@ func (r *RabbitMQBrokerService) StartConsuming() (taskChann chan models.Task, er
 		return
 	}
 	r.Channel = channelRabbitMQ
+	queue, err := r.Channel.QueueDeclare(
+		"QueueService1", // name
+		false,           // durable
+		false,           // delete when unused
+		false,           // exclusive
+		false,           // no-wait
+		nil,             // arguments
+	)
+	if err != nil {
+		return
+	}
 
 	// Subscribing to QueueService1 for getting messages.
 	messages, err := channelRabbitMQ.Consume(
-		"QueueService1", // queue name
-		"",              // consumer
-		true,            // auto-ack
-		false,           // exclusive
-		false,           // no local
-		false,           // no wait
-		nil,             // arguments
+		queue.Name, // queue name
+		"",         // consumer
+		true,       // auto-ack
+		false,      // exclusive
+		false,      // no local
+		false,      // no wait
+		nil,        // arguments
 	)
 	if err != nil {
 		return

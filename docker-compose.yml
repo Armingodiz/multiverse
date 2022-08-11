@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: core/Dockerfile
+    depends_on:
+      - mongodb
     hostname: core
     working_dir: /root/
     environment:
@@ -54,6 +56,8 @@ services:
     build:
       context: .
       dockerfile: notifier/Dockerfile
+    depends_on:
+      - rabbitmq
     hostname: notifier
     working_dir: /root/
     environment:
