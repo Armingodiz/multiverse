@@ -1,2 +1,3 @@
 core/store/mongo/data/
 .DS_Store
+notifier/.env
