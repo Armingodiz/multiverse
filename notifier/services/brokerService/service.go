@@ -27,6 +27,7 @@ type RabbitMQBrokerService struct {
 func (r *RabbitMQBrokerService) StartConsuming() (taskChann chan models.Task, errChann chan error, err error) {
 	// Define RabbitMQ server URL.
 	amqpServerURL := os.Getenv("AMQP_SERVER_URL")
+	amqpQueueName := os.Getenv("AMQP_QUEUE_NAME")
 	// Create a new RabbitMQ connection.
 	connectRabbitMQ, err := amqp.Dial(amqpServerURL)
 	if err != nil {
@@ -41,12 +42,12 @@ func (r *RabbitMQBrokerService) StartConsuming() (taskChann chan models.Task, er
 	}
 	r.Channel = channelRabbitMQ
 	queue, err := r.Channel.QueueDeclare(
-		"QueueService1", // name
-		false,           // durable
-		false,           // delete when unused
-		false,           // exclusive
-		false,           // no-wait
-		nil,             // arguments
+		amqpQueueName, // name
+		false,         // durable
+		false,         // delete when unused
+		false,         // exclusive
+		false,         // no-wait
+		nil,           // arguments
 	)
 	if err != nil {
 		return

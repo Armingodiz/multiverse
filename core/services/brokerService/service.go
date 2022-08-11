@@ -24,7 +24,7 @@ type RabbitMQBrokerService struct {
 func (r *RabbitMQBrokerService) Publish(task models.Task) error {
 	// Define RabbitMQ server URL.
 	amqpServerURL := os.Getenv("AMQP_SERVER_URL")
-
+	amqpQueueName := os.Getenv("AMQP_QUEUE_NAME")
 	// Create a new RabbitMQ connection.
 	connectRabbitMQ, err := amqp.Dial(amqpServerURL)
 	if err != nil {
@@ -43,12 +43,12 @@ func (r *RabbitMQBrokerService) Publish(task models.Task) error {
 	// With the instance and declare Queues that we can
 	// publish and subscribe to.
 	_, err = channelRabbitMQ.QueueDeclare(
-		"QueueService1", // queue name
-		false,           // durable
-		false,           // auto delete
-		false,           // exclusive
-		false,           // no wait
-		nil,             // arguments
+		amqpQueueName, // queue name
+		false,         // durable
+		false,         // auto delete
+		false,         // exclusive
+		false,         // no wait
+		nil,           // arguments
 	)
 	if err != nil {
 		return err
@@ -64,10 +64,10 @@ func (r *RabbitMQBrokerService) Publish(task models.Task) error {
 
 	// Attempt to publish a message to the queue.
 	return channelRabbitMQ.Publish(
-		"",              // exchange
-		"QueueService1", // queue name
-		false,           // mandatory
-		false,           // immediate
-		message,         // message to publish
+		"",            // exchange
+		amqpQueueName, // queue name
+		false,         // mandatory
+		false,         // immediate
+		message,       // message to publish
 	)
 }
