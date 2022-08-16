@@ -44,7 +44,7 @@ func (r *RabbitMQBrokerService) Publish(task models.Task) error {
 	// publish and subscribe to.
 	_, err = channelRabbitMQ.QueueDeclare(
 		amqpQueueName, // queue name
-		false,         // durable
+		true,          // durable ==> if server restarts, messages will be there
 		false,         // auto delete
 		false,         // exclusive
 		false,         // no wait
@@ -58,8 +58,9 @@ func (r *RabbitMQBrokerService) Publish(task models.Task) error {
 		return err
 	}
 	message := amqp.Publishing{
-		ContentType: "application/json",
-		Body:        taskBytes,
+		DeliveryMode: amqp.Persistent, // Persistent ==> if server restarts, messages will be there
+		ContentType:  "application/json",
+		Body:         taskBytes,
 	}
 
 	// Attempt to publish a message to the queue.
