@@ -17,7 +17,7 @@ services:
       - CALCULATOR_PORT=8082
       - CALCULATOR_USE_SSL=false
       - AMQP_SERVER_URL=amqp://guest:guest@message-broker:5672/
-      - AMQP_QUEUE_NAME=multiverse-task
+      - AMQP_QUEUE_NAME=multiverse-task-queue
     networks:
       - default
     ports:
@@ -63,7 +63,7 @@ services:
     working_dir: /root/
     environment:
       - AMQP_SERVER_URL=amqp://guest:guest@message-broker:5672/
-      - AMQP_QUEUE_NAME=multiverse-task
+      - AMQP_QUEUE_NAME=multiverse-task-queue
     networks:
       - default
 
