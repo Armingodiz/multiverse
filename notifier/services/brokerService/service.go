@@ -43,11 +43,19 @@ func (r *RabbitMQBrokerService) StartConsuming() (taskChann chan models.Task, er
 	r.Channel = channelRabbitMQ
 	queue, err := r.Channel.QueueDeclare(
 		amqpQueueName, // name
-		false,         // durable
+		true,          // durable (will survive server restarts)
 		false,         // delete when unused
 		false,         // exclusive
 		false,         // no-wait
 		nil,           // arguments
+	)
+	if err != nil {
+		return
+	}
+	err = r.Channel.Qos( // it is for fair dispatch and means if there is no free workers, the message will be put in the queue and will be delivered to the next worker.
+		1,     // prefetch count
+		0,     // prefetch size
+		false, // global
 	)
 	if err != nil {
 		return
@@ -57,7 +65,7 @@ func (r *RabbitMQBrokerService) StartConsuming() (taskChann chan models.Task, er
 	messages, err := channelRabbitMQ.Consume(
 		queue.Name, // queue name
 		"",         // consumer
-		true,       // auto-ack
+		false,      // auto-ack == > message.Ack(false) ==> message will be removed
 		false,      // exclusive
 		false,      // no local
 		false,      // no wait
@@ -81,6 +89,7 @@ func (r *RabbitMQBrokerService) StartConsuming() (taskChann chan models.Task, er
 				errChann <- err
 				return
 			}
+			message.Ack(false)
 			taskChann <- task
 		}
 	}()
