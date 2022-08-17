@@ -54,6 +54,11 @@ func (u *UserController) Signup() gin.HandlerFunc {
 func (u *UserController) GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		email := c.Param("email")
+		userEmail := c.MustGet("user_email").(string)
+		if email != userEmail {
+			c.JSON(http.StatusForbidden, gin.H{"error": "you cant get other users detailes"})
+			return
+		}
 		user, err := u.UserService.GetUser(email)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

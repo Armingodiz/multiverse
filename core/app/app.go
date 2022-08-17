@@ -49,12 +49,12 @@ func routing(r *gin.Engine) {
 	r.GET("/health", healthCheckController.GetStatus())
 	r.POST("/user/signup", UserController.Signup())
 	r.POST("/user/login", UserController.Login())
-	r.GET("/user/:email", UserController.GetUser())
 	r.DELETE("/user/:email", UserController.DeleteUser())
 	r.POST("/calculator", UserController.Calculate())
 
 	//Protected routes
 	r.Use(middlewares.JwtAuthorizationMiddleware())
+	r.GET("/user/:email", UserController.GetUser())
 }
 
 func getMongoDbCollection() *mongo.Collection {
