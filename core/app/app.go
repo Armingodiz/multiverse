@@ -48,6 +48,7 @@ func routing(r *gin.Engine) {
 	//unprotected routes
 	r.GET("/health", healthCheckController.GetStatus())
 	r.POST("/user/signup", UserController.Signup())
+	r.POST("/user/login", UserController.Login())
 	r.GET("/user/:email", UserController.GetUser())
 	r.DELETE("/user/:email", UserController.DeleteUser())
 	r.POST("/calculator", UserController.Calculate())

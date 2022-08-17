@@ -2,26 +2,22 @@ package shared
 
 import (
 	"errors"
+	"time"
+
+	"multiverse/core/config"
 
 	"github.com/dgrijalva/jwt-go"
-	"multiverse/core/config"
 )
 
-func GetAccountId(tokenString string) (string, error) {
+func GetUserEmail(tokenString string) (string, error) {
 	claims, err := getClaims(tokenString)
 	if err != nil {
 		return "", err
 	}
-	if user, ok := claims["user"]; ok {
-		if userMap, isUserMap := user.(map[string]interface{}); isUserMap {
-			if accountId, hasAccountId := userMap["accountId"]; hasAccountId {
-				if accountIdString, isAccountIdString := accountId.(string); isAccountIdString {
-					return accountIdString, nil
-				}
-			}
-		}
+	if email, ok := claims["user_email"]; ok {
+		return email.(string), nil
 	}
-	return "", errors.New("Claim not found")
+	return "", errors.New("claim not found")
 }
 
 func getClaims(tokenString string) (jwt.MapClaims, error) {
@@ -30,7 +26,7 @@ func getClaims(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("Invalid signature")
+			return nil, errors.New("invalid signature")
 		}
 		return secret, nil
 	})
@@ -41,7 +37,22 @@ func getClaims(tokenString string) (jwt.MapClaims, error) {
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims, nil
 	} else {
-		return nil, errors.New("Invalid token")
+		return nil, errors.New("invalid token")
 	}
 
+}
+
+// CreateToken creates a new token for a specific username and duration
+func CreateJwtToken(email string, duration time.Duration) (string, error) {
+	type Claims struct {
+		Email string `json:"email"`
+		jwt.StandardClaims
+	}
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+		Email: email,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(duration).Unix(),
+		},
+	})
+	return jwtToken.SignedString([]byte(config.Configs.Secrets.AuthServerJwtSecret))
 }
