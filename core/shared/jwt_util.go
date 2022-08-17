@@ -7,20 +7,18 @@ import (
 	"multiverse/core/config"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
-func GetUserEmail(tokenString string) (string, error) {
-	claims, err := getClaims(tokenString)
-	if err != nil {
-		return "", err
+func GetUserEmail(c *gin.Context) (string, error) {
+	email, ok := c.Get("user_email")
+	if !ok {
+		return "", errors.New("claim not found")
 	}
-	if email, ok := claims["user_email"]; ok {
-		return email.(string), nil
-	}
-	return "", errors.New("claim not found")
+	return email.(string), nil
 }
 
-func getClaims(tokenString string) (jwt.MapClaims, error) {
+func ValidateAndGetClaims(tokenString string) (jwt.MapClaims, error) {
 	secret := []byte(config.Configs.Secrets.AuthServerJwtSecret)
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
